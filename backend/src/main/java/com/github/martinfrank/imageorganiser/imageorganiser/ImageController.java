@@ -72,8 +72,8 @@ public class ImageController {
 
         try {
             List<Path> files = fileService.listImageFilesInImagedir();
-            files.forEach(p -> imageService.updateImageInformation(p));
-            List<String> names = files.stream().map(Path::toString).toList();
+            files.forEach(imageService::updateImageInformation);
+            List<String> names = files.stream().map(p -> p.getFileName().toString()).toList();
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(names);

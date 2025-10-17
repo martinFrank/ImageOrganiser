@@ -7,7 +7,7 @@ import jakarta.persistence.Id;
 import java.time.LocalDateTime;
 
 @Entity
-public class FileInformationEntity {
+public class ImageInformationEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,7 +21,7 @@ public class FileInformationEntity {
     private LocalDateTime updatedAt;
 
     // Default constructor
-    public FileInformationEntity() {
+    public ImageInformationEntity() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }

@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Optional;
 
 @Service
 public class ImageService {
@@ -24,17 +25,17 @@ public class ImageService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ImageService.class);
 
     private final ImageRepository imageRepository;
+    private final ImageInformationRepository imageInformationRepository;
 
-    public ImageService(ImageRepository imageRepository) {
+    public ImageService(ImageRepository imageRepository, ImageInformationRepository imageInformationRepository) {
         this.imageRepository = imageRepository;
+        this.imageInformationRepository = imageInformationRepository;
     }
 
     public Page<Image> findAll(Pageable pageable) {
         return imageRepository.findAll(pageable);
     }
 
-    private record ImageSize(int widthInPx, int heightInPx) {
-    }
 
     public byte[] getIslandImage() throws IOException {
         ClassPathResource resource = new ClassPathResource("island-1.jpg");
@@ -50,44 +51,28 @@ public class ImageService {
     }
 
     public void updateImageInformation(Path imagePath) {
+        Optional<ImageInformationEntity> entity = createNonExistingImageInformation(imagePath);
+        entity.ifPresent(imageInformationRepository::save);
+        LOGGER.debug("new Image information {}", entity);
+    }
+    private Optional<ImageInformationEntity> createNonExistingImageInformation(Path imagePath) {
         File imageFile = imagePath.toFile();
-        FileInformationEntity fileInformationEntity = new FileInformationEntity();
-        fileInformationEntity.setFilename(imageFile.getAbsolutePath());
-        fileInformationEntity.setHash(calculateFileHash(imageFile));
-        ImageSize size = extractSize(imageFile);
-        if (size != null) {
-            fileInformationEntity.setWidth(size.widthInPx());
-            fileInformationEntity.setHeight(size.heightInPx());
-        }
-        LOGGER.debug("new Image information {}", fileInformationEntity);
-
-    }
-
-    private ImageSize extractSize(File imageFile) {
-        try {
-            BufferedImage image = ImageIO.read(imageFile);
-            if (image != null) {
-                return new ImageSize(image.getWidth(), image.getHeight());
+        ImageInformationEntity fileInformationEntity = new ImageInformationEntity();
+        String hash = FileUtil.calculateFileHash(imageFile);
+        String filename = imageFile.getAbsolutePath();
+        Optional<ImageInformationEntity> entity = imageInformationRepository.findByHashOrFileName(hash, filename);
+        if(entity.isEmpty()) {
+            fileInformationEntity.setFilename(filename);
+            fileInformationEntity.setHash(hash);
+            ImageSize size = FileUtil.extractSize(imageFile);
+            if (size != null) {
+                fileInformationEntity.setWidth(size.widthInPx());
+                fileInformationEntity.setHeight(size.heightInPx());
+                return Optional.of(fileInformationEntity);
             }
-        } catch (IOException e) {
-            // Log error or handle appropriately
         }
-        return null;
+        return Optional.empty();
     }
 
-    private String calculateFileHash(File file) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] fileBytes = Files.readAllBytes(file.toPath());
-            byte[] hashBytes = digest.digest(fileBytes);
-            StringBuilder sb = new StringBuilder();
-            for (byte b : hashBytes) {
-                sb.append(String.format("%02x", b));
-            }
-            return sb.toString();
-        } catch (NoSuchAlgorithmException | IOException e) {
-            // Log error or handle appropriately
-            return null;
-        }
-    }
+
 }
