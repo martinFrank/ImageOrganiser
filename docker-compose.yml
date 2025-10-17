@@ -26,6 +26,12 @@ services:
       - "8080:8080"
     networks:
       - imageorganiser_network
+    volumes:
+      #- /home/martin/daten:/app/daten:rw
+      #- /home/mosh/logs:/app/logs:ro
+      - C:/Users/m.frank/Downloads:/app/imagedir:rw
+      
+
 
   frontend:
     build: ./frontend

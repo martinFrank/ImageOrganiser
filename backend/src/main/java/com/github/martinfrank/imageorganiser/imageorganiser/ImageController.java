@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.CrossOrigin;
 
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/images")
@@ -53,6 +55,20 @@ public class ImageController {
         } catch (IOException e) {
             logger.error("Error loading island image: {}", e.getMessage());
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    @PostMapping("/timestamp")
+    public ResponseEntity<List<String>> updateImages(@RequestBody TimestampDto timestampDto) {
+        logger.debug("REST call wurde ausgeführt: timestamp {}", timestampDto.time());
+        try {
+            List<String> files = imageService.listFilesInImagedir();
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(files);
+        } catch (IOException e) {
+            logger.error("Error listing files in imagedir: {}", e.getMessage());
+            return ResponseEntity.status(500).body(Collections.emptyList());
         }
     }
 }
