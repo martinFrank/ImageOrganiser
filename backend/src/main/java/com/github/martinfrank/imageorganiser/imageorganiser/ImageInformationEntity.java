@@ -4,7 +4,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.CascadeType;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 public class ImageInformationEntity {
@@ -19,6 +22,9 @@ public class ImageInformationEntity {
     private int height;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "imageInformation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ImagePredicateEntity> predicates;
 
     // Default constructor
     public ImageInformationEntity() {
@@ -85,6 +91,15 @@ public class ImageInformationEntity {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public List<ImagePredicateEntity> getPredicates() {
+        return predicates;
+    }
+
+    public void setPredicates(List<ImagePredicateEntity> predicates) {
+        this.predicates = predicates;
+        this.updatedAt = LocalDateTime.now();
     }
 
     @Override

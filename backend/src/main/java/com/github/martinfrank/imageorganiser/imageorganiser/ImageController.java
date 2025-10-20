@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,11 +24,9 @@ public class ImageController {
 
     private final AtomicBoolean isUpdating = new AtomicBoolean(false);
     private final ImageService imageService;
-    private final FileService fileService;
 
-    public ImageController(ImageService imageService, FileService fileService) {
+    public ImageController(ImageService imageService) {
         this.imageService = imageService;
-        this.fileService = fileService;
     }
 
     @GetMapping
@@ -40,12 +39,24 @@ public class ImageController {
         return ResponseEntity.ok(images);
     }
 
-//    @GetMapping("/{id}")
-//    public ResponseEntity<Image> getImageById(@PathVariable Long id) {
-//        return imageRepository.findById(id)
-//                .map(image -> ResponseEntity.ok(image))
-//                .orElse(ResponseEntity.notFound().build());
-//    }
+    @PostMapping("/filtered")
+    public ResponseEntity<Page<ImageDto>> getFilteredImages(
+            @RequestBody List<ImageRequestDto> filters,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        LOGGER.debug("REST call wurde ausgeführt: getFilteredImages with filters={}, page={}, size={}", filters, page,
+                size);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<ImageDto> images = imageService.findFilteredImages(filters, pageable);
+        return ResponseEntity.ok(images);
+    }
+
+    // @GetMapping("/{id}")
+    // public ResponseEntity<Image> getImageById(@PathVariable Long id) {
+    // return imageRepository.findById(id)
+    // .map(image -> ResponseEntity.ok(image))
+    // .orElse(ResponseEntity.notFound().build());
+    // }
 
     @GetMapping("/island")
     public ResponseEntity<byte[]> getIslandImage() {
@@ -67,18 +78,17 @@ public class ImageController {
 
         if (!isUpdating.compareAndSet(false, true)) {
             LOGGER.warn("Update already in progress, returning busy response");
-            return ResponseEntity.status(409).body(Collections.singletonList("Server is busy processing another update request"));
+            return ResponseEntity.status(409)
+                    .body(Collections.singletonList("Server is busy processing another update request"));
         }
 
         try {
-            List<Path> files = fileService.listImageFilesInImagedir();
-            files.forEach(imageService::updateImageInformation);
-            List<String> names = files.stream().map(p -> p.getFileName().toString()).toList();
+            List<String> scannedFiles = imageService.updateInventory();
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(names);
+                    .body(scannedFiles);
         } catch (IOException e) {
-            LOGGER.error("Error listing files in imagedir: {}", e.getMessage());
+            LOGGER.error("Error updating image inventory: {}", e.getMessage());
             return ResponseEntity.status(500).body(Collections.emptyList());
         } finally {
             isUpdating.set(false);
