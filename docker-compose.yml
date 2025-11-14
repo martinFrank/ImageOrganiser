@@ -30,6 +30,7 @@ services:
     volumes:
       #- /home/martin/daten:/app/daten:rw
       #- /home/mosh/logs:/app/logs:ro
+      #- /home/mosh/hwdisk/projects/ImageOrganiser/frontend/data:/app/imagedir:rw
       - C:/Users/m.frank/Downloads:/app/imagedir:rw
 
   frontend:
@@ -40,6 +41,8 @@ services:
       - "8180:80"
     networks:
       - imageorganiser_network
+      - container_app_network
+
     #hinweis: frontend in den labels bezieht sich auf den service (genannt ueber build)
     labels:
       - "traefik.enable=true"
@@ -49,10 +52,13 @@ services:
       - "traefik.http.routers.frontend.middlewares=strip-image-prefix"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
       #oder doch port 8180?
+      - "traefik.docker.network=container_app_network" 
 
 networks:
   imageorganiser_network:
     driver: bridge
+  container_app_network:
+    external: true
 
 volumes:
   postgres_data:
