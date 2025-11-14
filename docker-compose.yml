@@ -30,8 +30,8 @@ services:
     volumes:
       #- /home/martin/daten:/app/daten:rw
       #- /home/mosh/logs:/app/logs:ro
-      #- /home/mosh/hwdisk/projects/ImageOrganiser/frontend/data:/app/imagedir:rw
-      - C:/Users/m.frank/Downloads:/app/imagedir:rw
+      - /home/mosh/hwdisk/projects/ImageOrganiser/frontend/data:/app/imagedir:rw
+      #- C:/Users/m.frank/Downloads:/app/imagedir:rw
 
   frontend:
     build: ./frontend
@@ -47,11 +47,11 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.entrypoints=websecure"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
       - "traefik.http.routers.frontend.rule=PathPrefix(`/image`)"
       - "traefik.http.middlewares.strip-image-prefix.stripprefix.prefixes=/image"
       - "traefik.http.routers.frontend.middlewares=strip-image-prefix"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
-      #oder doch port 8180?
       - "traefik.docker.network=container_app_network" 
 
 networks:
