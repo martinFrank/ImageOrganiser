@@ -4,3 +4,8 @@
 windows:
 curl -X POST -H "Content-Type: application/json" -d "{\"time\":\"dontcare\"}" http://localhost:8080/api/images/timestamp
 
+
+
+
+docker compose -f docker-compse.yml build --no-cache
+
